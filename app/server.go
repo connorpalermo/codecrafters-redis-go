@@ -29,7 +29,6 @@ func main() {
 }
 
 func handleClient(conn net.Conn) {
-	defer conn.Close()
 	reader := bufio.NewReader(conn)
 	writer := bufio.NewWriter(conn)
 
