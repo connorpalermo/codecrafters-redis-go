@@ -1,14 +1,14 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
-	"io"
 	"strings"
 
 	"net"
 	"os"
 )
+
+const bufferSize = 1024
 
 func main() {
 
@@ -29,57 +29,28 @@ func main() {
 }
 
 func handleClient(conn net.Conn) {
-	reader := bufio.NewReader(conn)
-	writer := bufio.NewWriter(conn)
-
-	for {
-		line, err := reader.ReadString('\n')
-		if err != nil {
-			if err == io.EOF {
-				fmt.Println("End of File")
-				os.Exit(1)
-			}
-			fmt.Println(err.Error())
-		}
-		fmt.Println("Received message: ", line)
-		command := strings.TrimSpace(line)
-		if strings.EqualFold(command, "ECHO") {
-			for {
-				line, err := reader.ReadString('\n')
-				if err != nil {
-					if err == io.EOF {
-						fmt.Println("End of File")
-						os.Exit(1)
-					}
-					if strings.Contains(line, "*") {
-						break
-					}
-					command += line + ","
-				}
-			}
-		}
-		processCommand(command, writer)
+	bytes := make([]byte, bufferSize)
+	command, err := conn.Read(bytes)
+	if err != nil {
+		fmt.Println("Error reading: ", err.Error())
+		os.Exit(1)
 	}
+	processCommand(string(bytes[:command]), conn)
 }
 
-func processCommand(command string, writer *bufio.Writer) {
+func processCommand(message string, conn net.Conn) {
+	commands := strings.Split(message, "\r\n")
+	response := "Not yet implemented"
 	switch {
-	case strings.EqualFold(command, "PING"):
-		_, err := writer.WriteString("+PONG\r\n")
-		if err != nil {
-			fmt.Println("Error writing to connection: ", err.Error())
-		}
-		writer.Flush()
-	case strings.Contains(command, "ECHO") || strings.Contains(command, "echo"):
-		commandArr := strings.Split(command, ",")
-		resp := fmt.Sprintf("%s%s%s", "+", commandArr[len(commandArr)-1], "\\r\\n")
-		fmt.Println(resp)
-		_, err := writer.WriteString(resp)
-		if err != nil {
-			fmt.Println("Error writing to connection: ", err.Error())
-		}
-		writer.Flush()
+	case strings.EqualFold(commands[2], "PING"):
+		response = "+PONG\r\n"
+	case strings.Contains(commands[2], "ECHO") || strings.Contains(commands[2], "echo"):
+		response = "+" + commands[4] + "\r\n"
 	default:
 		fmt.Println("Command not yet implemented, ignoring for now.")
+	}
+	_, err := conn.Write([]byte(response))
+	if err != nil {
+		fmt.Println("Error writing to connection: ", err.Error())
 	}
 }
