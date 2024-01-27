@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"strings"
 
 	"net"
@@ -18,6 +19,7 @@ func main() {
 		os.Exit(1)
 	}
 	defer listener.Close()
+
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
@@ -29,23 +31,29 @@ func main() {
 }
 
 func handleClient(conn net.Conn) {
+	buffer := make([]byte, bufferSize)
 	defer conn.Close()
-	bytes := make([]byte, bufferSize)
-	command, err := conn.Read(bytes)
-	if err != nil {
-		fmt.Println("Error reading: ", err.Error())
-		os.Exit(1)
+	for {
+		command, err := conn.Read(buffer)
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			fmt.Println("Error reading connection: ", err.Error())
+			os.Exit(1)
+		}
+		processCommand(string(buffer[:command]), conn)
 	}
-	processCommand(string(bytes[:command]), conn)
 }
 
 func processCommand(message string, conn net.Conn) {
 	commands := strings.Split(message, "\r\n")
+	command := commands[2]
 	response := "Not yet implemented"
 	switch {
-	case strings.EqualFold(commands[2], "PING"):
+	case strings.EqualFold(command, "PING"):
 		response = "+PONG\r\n"
-	case strings.Contains(commands[2], "ECHO") || strings.Contains(commands[2], "echo"):
+	case strings.EqualFold(command, "ECHO"):
 		response = "+" + commands[4] + "\r\n"
 	default:
 		fmt.Println("Command not yet implemented, ignoring for now.")
