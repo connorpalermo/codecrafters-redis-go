@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"strings"
 
 	"net"
 	"os"
@@ -35,7 +36,9 @@ func main() {
 			fmt.Println(err.Error())
 		}
 		fmt.Println("Received message: ", line)
-
+		if strings.TrimSpace(strings.ToUpper(line)) != "PING" {
+			continue
+		}
 		_, err = writer.WriteString("+PONG\r\n")
 		if err != nil {
 			fmt.Println("Error writing to connection: ", err.Error())
