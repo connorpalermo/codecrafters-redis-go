@@ -11,6 +11,8 @@ import (
 
 const bufferSize = 1024
 
+var db = make(map[string]string)
+
 func main() {
 
 	listener, err := net.Listen("tcp", "0.0.0.0:6379")
@@ -55,6 +57,10 @@ func processCommand(message string, conn net.Conn) {
 		response = "+PONG\r\n"
 	case strings.EqualFold(command, "ECHO"):
 		response = "+" + commands[4] + "\r\n"
+	case strings.EqualFold(command, "SET"):
+		setDBValue(commands[4], commands[6])
+	case strings.EqualFold(command, "GET"):
+		response = retrieveDBValue(commands[4])
 	default:
 		fmt.Println("Command not yet implemented, ignoring for now.")
 	}
@@ -62,4 +68,18 @@ func processCommand(message string, conn net.Conn) {
 	if err != nil {
 		fmt.Println("Error writing to connection: ", err.Error())
 	}
+}
+
+func setDBValue(key string, value string) {
+	db[key] = value
+}
+
+func retrieveDBValue(key string) string {
+	val, ok := db[key]
+
+	if ok {
+		return val
+	}
+
+	return ""
 }
