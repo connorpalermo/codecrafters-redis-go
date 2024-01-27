@@ -29,6 +29,7 @@ func main() {
 }
 
 func handleClient(conn net.Conn) {
+	defer conn.Close()
 	bytes := make([]byte, bufferSize)
 	command, err := conn.Read(bytes)
 	if err != nil {
