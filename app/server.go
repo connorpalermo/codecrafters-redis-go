@@ -44,6 +44,21 @@ func handleClient(conn net.Conn) {
 		}
 		fmt.Println("Received message: ", line)
 		command := strings.TrimSpace(line)
+		if strings.EqualFold(command, "ECHO") {
+			for {
+				line, err := reader.ReadString('\n')
+				if err != nil {
+					if err == io.EOF {
+						fmt.Println("End of File")
+						os.Exit(1)
+					}
+					if strings.Contains(line, "*") {
+						break
+					}
+					command += line + ","
+				}
+			}
+		}
 		processCommand(command, writer)
 	}
 }
@@ -57,8 +72,8 @@ func processCommand(command string, writer *bufio.Writer) {
 		}
 		writer.Flush()
 	case strings.Contains(command, "ECHO") || strings.Contains(command, "echo"):
-		commandArr := strings.Split(command, "\\r\\n")
-		resp := fmt.Sprintf("%s%s%s", "+", commandArr[len(commandArr)-2], "\\r\\n")
+		commandArr := strings.Split(command, ",")
+		resp := fmt.Sprintf("%s%s%s", "+", commandArr[len(commandArr)-1], "\\r\\n")
 		fmt.Println(resp)
 		_, err := writer.WriteString(resp)
 		if err != nil {
