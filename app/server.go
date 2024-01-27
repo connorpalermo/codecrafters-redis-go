@@ -43,19 +43,29 @@ func handleClient(conn net.Conn) {
 			fmt.Println(err.Error())
 		}
 		fmt.Println("Received message: ", line)
-		command := strings.TrimSpace(strings.ToUpper(line))
+		command := strings.TrimSpace(line)
 		processCommand(command, writer)
 	}
 }
 
 func processCommand(command string, writer *bufio.Writer) {
-	if command == "PING" {
+	switch {
+	case strings.EqualFold(command, "PING"):
 		_, err := writer.WriteString("+PONG\r\n")
 		if err != nil {
 			fmt.Println("Error writing to connection: ", err.Error())
 		}
 		writer.Flush()
-	} else {
+	case strings.Contains(command, "ECHO") || strings.Contains(command, "echo"):
+		commandArr := strings.Split(command, "\\r\\n")
+		resp := fmt.Sprintf("%s%s%s", "+", commandArr[len(commandArr)-2], "\\r\\n")
+		fmt.Println(resp)
+		_, err := writer.WriteString(resp)
+		if err != nil {
+			fmt.Println("Error writing to connection: ", err.Error())
+		}
+		writer.Flush()
+	default:
 		fmt.Println("Command not yet implemented, ignoring for now.")
 	}
 }
