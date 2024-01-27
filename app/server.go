@@ -59,8 +59,9 @@ func processCommand(message string, conn net.Conn) {
 		response = "+" + commands[4] + "\r\n"
 	case strings.EqualFold(command, "SET"):
 		setDBValue(commands[4], commands[6])
+		response = "+OK\r\n"
 	case strings.EqualFold(command, "GET"):
-		response = retrieveDBValue(commands[4])
+		response = "+" + retrieveDBValue(commands[4]) + "\r\n"
 	default:
 		fmt.Println("Command not yet implemented, ignoring for now.")
 	}
