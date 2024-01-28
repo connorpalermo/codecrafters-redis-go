@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"io"
-	"math"
 	"strconv"
 	"strings"
 	"time"
@@ -65,8 +64,6 @@ func processCommand(message string, conn net.Conn) {
 		db[commands[4]] = commands[6]
 		if len(commands) > 8 && strings.EqualFold(commands[8], "px") {
 			ttl[commands[4]] = makeTimestamp(commands[10])
-		} else {
-			ttl[commands[4]] = math.MinInt64
 		}
 		response = "+OK\r\n"
 	case strings.EqualFold(command, "GET"):
