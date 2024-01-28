@@ -71,7 +71,7 @@ func processCommand(message string, conn net.Conn) {
 		response = "+OK\r\n"
 	case strings.EqualFold(command, "GET"):
 		if val, ok := ttl[commands[4]]; ok {
-			if val-(time.Now().UnixNano()/1e6) <= 0 {
+			if val-(time.Now().UnixNano()/1e6) > 0 {
 				response = "+" + retrieveDBValue(commands[4]) + "\r\n"
 			} else {
 				response = "$-1\r\n"
