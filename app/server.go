@@ -3,7 +3,10 @@ package main
 import (
 	"fmt"
 	"io"
+	"math"
+	"strconv"
 	"strings"
+	"time"
 
 	"net"
 	"os"
@@ -12,6 +15,7 @@ import (
 const bufferSize = 1024
 
 var db = make(map[string]string)
+var ttl = make(map[string]int64)
 
 func main() {
 
@@ -58,10 +62,23 @@ func processCommand(message string, conn net.Conn) {
 	case strings.EqualFold(command, "ECHO"):
 		response = "+" + commands[4] + "\r\n"
 	case strings.EqualFold(command, "SET"):
-		setDBValue(commands[4], commands[6])
+		db[commands[4]] = commands[6]
+		if len(commands) > 8 && strings.EqualFold(commands[8], "px") {
+			ttl[commands[4]] = makeTimestamp(commands[10])
+		} else {
+			ttl[commands[4]] = math.MinInt64
+		}
 		response = "+OK\r\n"
 	case strings.EqualFold(command, "GET"):
-		response = "+" + retrieveDBValue(commands[4]) + "\r\n"
+		if val, ok := ttl[commands[4]]; ok {
+			if val-(time.Now().UnixNano()/1e6) <= 0 {
+				response = "+" + retrieveDBValue(commands[4]) + "\r\n"
+			} else {
+				response = "$-1\r\n"
+			}
+		} else {
+			response = "+" + retrieveDBValue(commands[4]) + "\r\n"
+		}
 	default:
 		fmt.Println("Command not yet implemented, ignoring for now.")
 	}
@@ -71,8 +88,12 @@ func processCommand(message string, conn net.Conn) {
 	}
 }
 
-func setDBValue(key string, value string) {
-	db[key] = value
+func makeTimestamp(milliseconds string) int64 {
+	n, err := strconv.ParseInt(milliseconds, 10, 64)
+	if err == nil {
+		fmt.Printf("%d of type %T", n, n)
+	}
+	return (time.Now().UnixNano() / 1e6) + n
 }
 
 func retrieveDBValue(key string) string {
