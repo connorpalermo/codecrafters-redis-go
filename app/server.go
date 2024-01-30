@@ -70,15 +70,7 @@ func processCommand(message string, conn net.Conn) {
 		}
 		response = "+OK\r\n"
 	case strings.EqualFold(command, "GET"):
-		if val, ok := ttl[commands[4]]; ok {
-			if val-(time.Now().UnixNano()/1e6) > 0 {
-				response = "+" + retrieveDBValue(commands[4]) + "\r\n"
-			} else {
-				response = "$-1\r\n"
-			}
-		} else {
-			response = "+" + retrieveDBValue(commands[4]) + "\r\n"
-		}
+		response = processGetCommand(commands)
 	case strings.EqualFold(command, "CONFIG"):
 		response = processConfigCommand(commands)
 	default:
@@ -113,9 +105,24 @@ func processConfigCommand(commands []string) string {
 	if strings.EqualFold(commands[4], "GET") {
 		keyLen := len(commands[6])
 		valLen := len(properties[commands[6]])
-		processed = "*2\r\n$" + strconv.Itoa(keyLen) + "\r\n" + commands[6] + "\r\n$" + strconv.Itoa(valLen) + "\r\n" + properties[commands[6]] + "\r\n"
+		processed = "*2\r\n$" + strconv.Itoa(keyLen) + "\r\n" + commands[6] +
+			"\r\n$" + strconv.Itoa(valLen) + "\r\n" + properties[commands[6]] + "\r\n"
 	}
 	return processed
+}
+
+func processGetCommand(commands []string) string {
+	response := ""
+	if val, ok := ttl[commands[4]]; ok {
+		if val-(time.Now().UnixNano()/1e6) > 0 {
+			response = "+" + retrieveDBValue(commands[4]) + "\r\n"
+		} else {
+			response = "$-1\r\n"
+		}
+	} else {
+		response = "+" + retrieveDBValue(commands[4]) + "\r\n"
+	}
+	return response
 }
 
 func populateProperties() {
