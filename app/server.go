@@ -109,12 +109,7 @@ func retrieveDBValue(key string) string {
 }
 
 func processConfigCommand(commands []string) string {
-	processed := ""
-	if strings.EqualFold(commands[4], "GET") {
-		commandLen := len(commands[6])
-		valLen := len(properties[commands[8]])
-		processed = "*2\r\n$" + strconv.Itoa(commandLen) + "\r\n" + commands[6] + "\r\n$" + strconv.Itoa(valLen) + "\r\n" + commands[8] + "/r/n"
-	}
+	processed := "HELLO!"
 	return processed
 }
 
