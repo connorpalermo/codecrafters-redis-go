@@ -112,7 +112,7 @@ func processConfigCommand(commands []string) string {
 	processed := ""
 	if strings.EqualFold(commands[4], "GET") {
 		commandLen := len(commands[6])
-		processed = "*2\\r\\n$" + strconv.Itoa(commandLen) + "\\r\\n" + commands[6] + "\\r\\n"
+		processed = "*2\r\n$" + strconv.Itoa(commandLen) + "\r\n" + commands[6] + "\r\n"
 	}
 	return processed
 }
