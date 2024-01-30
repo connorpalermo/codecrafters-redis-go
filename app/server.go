@@ -73,6 +73,8 @@ func processCommand(message string, conn net.Conn) {
 		response = processGetCommand(commands)
 	case strings.EqualFold(command, "CONFIG"):
 		response = processConfigCommand(commands)
+	case strings.EqualFold(command, "KEYS"):
+		response = retrieveKeyFromFile()
 	default:
 		fmt.Println("Command not yet implemented, ignoring for now.")
 	}
@@ -125,6 +127,18 @@ func processGetCommand(commands []string) string {
 	return response
 }
 
+func retrieveKeyFromFile() string {
+	fileName := properties["dir"] + "/" + properties["dbfilename"]
+	b, err := os.ReadFile(fileName)
+	if err != nil {
+		fmt.Print("File does not exist!")
+		return "$-1\r\n"
+	}
+
+	key := string(b)
+	response := "*1\r\n$" + strconv.Itoa(len(key)) + "\r\n" + key + "\r\n"
+	return response
+}
 func populateProperties() {
 	args := os.Args[1:]
 
