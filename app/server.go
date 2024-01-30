@@ -15,8 +15,11 @@ const bufferSize = 1024
 
 var db = make(map[string]string)
 var ttl = make(map[string]int64)
+var properties = make(map[string]string)
 
 func main() {
+
+	populateProperties()
 
 	listener, err := net.Listen("tcp", "0.0.0.0:6379")
 	if err != nil {
@@ -76,6 +79,8 @@ func processCommand(message string, conn net.Conn) {
 		} else {
 			response = "+" + retrieveDBValue(commands[4]) + "\r\n"
 		}
+	case strings.EqualFold(command, "CONFIG"):
+		response = processConfigCommand(commands)
 	default:
 		fmt.Println("Command not yet implemented, ignoring for now.")
 	}
@@ -101,4 +106,25 @@ func retrieveDBValue(key string) string {
 	}
 
 	return ""
+}
+
+func processConfigCommand(commands []string) string {
+	processed := ""
+	if strings.EqualFold(commands[4], "GET") {
+		commandLen := len(commands[6])
+		valLen := len(properties[commands[8]])
+		processed = "*2\r\n$" + strconv.Itoa(commandLen) + "\r\n" + commands[6] + "\r\n$" + strconv.Itoa(valLen) + "\r\n" + commands[8] + "/r/n"
+	}
+	return processed
+}
+
+func populateProperties() {
+	args := os.Args[1:]
+
+	for i := 0; i < len(args); i++ {
+		if i%2 == 0 {
+			key := strings.ReplaceAll(args[i], "-", "")
+			properties[key] = args[i+1]
+		}
+	}
 }
