@@ -109,7 +109,10 @@ func retrieveDBValue(key string) string {
 }
 
 func processConfigCommand(commands []string) string {
-	processed := "HELLO!"
+	processed := ""
+	if strings.EqualFold(commands[4], "GET") {
+		processed = "HELLO!"
+	}
 	return processed
 }
 
