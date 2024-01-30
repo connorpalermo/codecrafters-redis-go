@@ -139,6 +139,7 @@ func retrieveKeyFromFile() string {
 	response := "*1\r\n$" + strconv.Itoa(len(key)) + "\r\n" + key + "\r\n"
 	return response
 }
+
 func populateProperties() {
 	args := os.Args[1:]
 
