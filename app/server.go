@@ -181,7 +181,9 @@ func processRDB() [][]string {
 		str := o.(*parser.StringObject)
 		key = str.Key
 		value = string(str.Value)
-		fmt.Println("Expiration is: ", (str.GetExpiration().UnixNano()/1e6)-(time.Now().UnixNano()/1e6))
+		if str.GetExpiration() != nil {
+			fmt.Println("Expiration is: ", (str.GetExpiration().UnixNano()/1e6)-(time.Now().UnixNano()/1e6))
+		}
 		current[0] = key
 		current[1] = value
 		rdbKeys[key] = value
