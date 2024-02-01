@@ -138,12 +138,7 @@ func processGetCommand(commands []string) string {
 }
 
 func retrieveKeysFromFile() [][]string {
-	array := processRDB("")
-	return array
-}
-
-func retrieveValueFromKey(keyToFind string) [][]string {
-	array := processRDB(keyToFind)
+	array := processRDB()
 	return array
 }
 
@@ -158,7 +153,7 @@ func populateProperties() {
 	}
 }
 
-func processRDB(keyToFind string) [][]string {
+func processRDB() [][]string {
 	fileName := properties["dir"] + "/" + properties["dbfilename"]
 	key, value := "", ""
 	var keyVals [][]string
@@ -182,7 +177,7 @@ func processRDB(keyToFind string) [][]string {
 		current[1] = value
 		rdbKeys[key] = value
 		keyVals = append(keyVals, current)
-		if key == "" || value == "" || keyToFind != "" {
+		if key == "" || value == "" {
 			return false
 		}
 		key = ""
