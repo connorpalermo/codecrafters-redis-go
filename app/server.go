@@ -141,9 +141,11 @@ func processGetCommandRbd(command string) string {
 	if val, ok := ttl[command]; ok {
 		if val-(time.Now().UnixNano()/1e6) > 0 {
 			return "$" + strconv.Itoa(len(rdbKeys[command])) + "\r\n" + rdbKeys[command] + "\r\n"
+		} else {
+			return "$-1\r\n"
 		}
 	}
-	return "$-1\r\n"
+	return "+" + rdbKeys[command] + "\r\n"
 }
 
 func retrieveKeysFromFile() [][]string {
