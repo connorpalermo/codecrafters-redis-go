@@ -73,7 +73,7 @@ func processCommand(message string, conn net.Conn) {
 		}
 		response = "+OK\r\n"
 	case strings.EqualFold(command, "GET") && properties["dbfilename"] == "":
-		response = processGetCommand(commands)
+		response = processGetCommand(retrieveDBValue(commands[4]))
 	case strings.EqualFold(command, "CONFIG"):
 		response = processConfigCommand(commands)
 	case strings.EqualFold(command, "KEYS"):
@@ -123,16 +123,16 @@ func processConfigCommand(commands []string) string {
 	return processed
 }
 
-func processGetCommand(commands []string) string {
+func processGetCommand(command string) string {
 	response := ""
-	if val, ok := ttl[commands[4]]; ok {
+	if val, ok := ttl[command]; ok {
 		if val-(time.Now().UnixNano()/1e6) > 0 {
-			response = "+" + retrieveDBValue(commands[4]) + "\r\n"
+			response = "+" + command + "\r\n"
 		} else {
 			response = "$-1\r\n"
 		}
 	} else {
-		response = "+" + retrieveDBValue(commands[4]) + "\r\n"
+		response = "+" + command + "\r\n"
 	}
 	return response
 }
