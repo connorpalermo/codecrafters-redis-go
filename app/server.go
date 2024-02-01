@@ -76,11 +76,14 @@ func processCommand(message string, conn net.Conn) {
 	case strings.EqualFold(command, "CONFIG"):
 		response = processConfigCommand(commands)
 	case strings.EqualFold(command, "KEYS"):
-		key := retrieveKeysFromFile()
-		response = "*1\r\n$" + strconv.Itoa(len(key)) + "\r\n" + key + "\r\n"
+		array := retrieveKeysFromFile()
+		response = "*" + strconv.Itoa(len(array)) + "r\n"
+		for i := 0; i < len(array); i++ {
+			response += "$" + strconv.Itoa(len(array[i][0])) + "\r\n" + array[i][0] + "$" + strconv.Itoa(len(array[i][1])) + "\r\n" + array[i][1] + "\r\n"
+		}
 	case strings.EqualFold(command, "GET"):
-		_, val := retrieveValueFromKey(commands[4])
-		response = "$" + strconv.Itoa(len(val)) + "\r\n" + val + "\r\n"
+		array := retrieveValueFromKey(commands[4])
+		response = "$" + strconv.Itoa(len(array[0][1])) + "\r\n" + array[0][1] + "\r\n"
 
 	default:
 		fmt.Println("Command not yet implemented, ignoring for now.")
@@ -134,14 +137,14 @@ func processGetCommand(commands []string) string {
 	return response
 }
 
-func retrieveKeysFromFile() string {
-	key, _ := processRDB("")
-	return key
+func retrieveKeysFromFile() [][]string {
+	array := processRDB("")
+	return array
 }
 
-func retrieveValueFromKey(keyToFind string) (string, string) {
-	key, val := processRDB(keyToFind)
-	return key, val
+func retrieveValueFromKey(keyToFind string) [][]string {
+	array := processRDB(keyToFind)
+	return array
 }
 
 func populateProperties() {
@@ -155,9 +158,10 @@ func populateProperties() {
 	}
 }
 
-func processRDB(keyToFind string) (string, string) {
+func processRDB(keyToFind string) [][]string {
 	fileName := properties["dir"] + "/" + properties["dbfilename"]
 	key, value := "", ""
+	var keyVals [][]string
 	rdbFile, err := os.Open(fileName)
 	if err != nil {
 		panic("open dump.rdb failed")
@@ -167,6 +171,7 @@ func processRDB(keyToFind string) (string, string) {
 	}()
 	decoder := parser.NewDecoder(rdbFile)
 	err = decoder.Parse(func(o parser.RedisObject) bool {
+		current := make([]string, 2)
 		switch o.GetType() {
 		case parser.StringType:
 			str := o.(*parser.StringObject)
@@ -189,22 +194,20 @@ func processRDB(keyToFind string) (string, string) {
 			key = stream.Key
 			value = stream.GetEncoding()
 		}
-
-		if keyToFind != "" {
-			if !strings.EqualFold(keyToFind, key) {
-				return false
-			} else {
-				return true
-			}
-		}
-		if key != "" {
+		current[0] = key
+		current[1] = value
+		keyVals = append(keyVals, current)
+		if key == "" || value == "" || keyToFind != "" {
 			return false
 		}
+		key = ""
+		value = ""
+		current = nil
 		return true
 	})
 	if err != nil {
 		panic(err)
 	}
 
-	return key, value
+	return keyVals
 }
