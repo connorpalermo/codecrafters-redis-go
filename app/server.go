@@ -17,6 +17,7 @@ const bufferSize = 1024
 
 var db = make(map[string]string)
 var ttl = make(map[string]int64)
+var rdbKeys = make(map[string]string)
 var properties = make(map[string]string)
 
 func main() {
@@ -82,10 +83,8 @@ func processCommand(message string, conn net.Conn) {
 			response += "$" + strconv.Itoa(len(array[i][0])) + "\r\n" + array[i][0] + "\r\n"
 		}
 	case strings.EqualFold(command, "GET"):
-		for i := 4; i < len(commands); i += 2 {
-			array := retrieveValueFromKey(commands[i])
-			response = "$" + strconv.Itoa(len(array[0][1])) + "\r\n" + array[0][1] + "\r\n"
-		}
+		retrieveKeysFromFile()
+		response = "$" + strconv.Itoa(len(rdbKeys[commands[4]])) + "\r\n" + rdbKeys[commands[4]] + "\r\n"
 	default:
 		fmt.Println("Command not yet implemented, ignoring for now.")
 	}
@@ -178,25 +177,10 @@ func processRDB(keyToFind string) [][]string {
 			str := o.(*parser.StringObject)
 			key = str.Key
 			value = string(str.Value)
-		case parser.ListType:
-			list := o.(*parser.ListObject)
-			key = list.Key
-			value = string(list.Values[1])
-		case parser.HashType:
-			hash := o.(*parser.HashObject)
-			key = hash.Key
-			value = hash.GetEncoding()
-		case parser.ZSetType:
-			zset := o.(*parser.ZSetObject)
-			key = zset.Key
-			value = zset.GetEncoding()
-		case parser.StreamType:
-			stream := o.(*parser.StreamObject)
-			key = stream.Key
-			value = stream.GetEncoding()
 		}
 		current[0] = key
 		current[1] = value
+		rdbKeys[key] = value
 		keyVals = append(keyVals, current)
 		if key == "" || value == "" || keyToFind != "" {
 			return false
