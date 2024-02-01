@@ -77,8 +77,9 @@ func processCommand(message string, conn net.Conn) {
 		response = processConfigCommand(commands)
 	case strings.EqualFold(command, "KEYS"):
 		array := retrieveKeysFromFile()
+		response = "*" + strconv.Itoa(len(array)) + "\r\n"
 		for i := 0; i < len(array); i++ {
-			response += "$" + strconv.Itoa(len(array[i][0])) + "\r\n" + array[i][0] + "$" + strconv.Itoa(len(array[i][0])) + "\r\n" + array[i][0]
+			response += "$" + strconv.Itoa(len(array[i][0])) + "\r\n" + array[i][0] + "\r\n"
 		}
 	case strings.EqualFold(command, "GET"):
 		array := retrieveValueFromKey(commands[4])
