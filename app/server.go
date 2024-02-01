@@ -167,12 +167,9 @@ func processRDB() [][]string {
 	decoder := parser.NewDecoder(rdbFile)
 	err = decoder.Parse(func(o parser.RedisObject) bool {
 		current := make([]string, 2)
-		switch o.GetType() {
-		case parser.StringType:
-			str := o.(*parser.StringObject)
-			key = str.Key
-			value = string(str.Value)
-		}
+		str := o.(*parser.StringObject)
+		key = str.Key
+		value = string(str.Value)
 		current[0] = key
 		current[1] = value
 		rdbKeys[key] = value
