@@ -69,7 +69,7 @@ func processCommand(message string, conn net.Conn) {
 	case strings.EqualFold(command, "SET"):
 		db[commands[4]] = commands[6]
 		if len(commands) > 8 && strings.EqualFold(commands[8], "px") {
-			ttl[commands[4]] = time.Now().UnixMilli()
+			ttl[commands[4]] = makeTimestamp(commands[10])
 		}
 		response = "+OK\r\n"
 	case strings.EqualFold(command, "GET") && properties["dbfilename"] == "":
@@ -92,6 +92,14 @@ func processCommand(message string, conn net.Conn) {
 	if err != nil {
 		fmt.Println("Error writing to connection: ", err.Error())
 	}
+}
+
+func makeTimestamp(milliseconds string) int64 {
+	n, err := strconv.ParseInt(milliseconds, 10, 64)
+	if err == nil {
+		fmt.Printf("%d of type %T", n, n)
+	}
+	return (time.Now().UnixNano() / 1e6) + n
 }
 
 func retrieveDBValue(key string) string {
@@ -118,7 +126,7 @@ func processConfigCommand(commands []string) string {
 func processGetCommand(commands []string) string {
 	response := ""
 	if val, ok := ttl[commands[4]]; ok {
-		if val-time.Now().UnixMilli() > 0 {
+		if val-(time.Now().UnixNano()/1e6) > 0 {
 			response = "+" + retrieveDBValue(commands[4]) + "\r\n"
 		} else {
 			response = "$-1\r\n"
@@ -131,7 +139,7 @@ func processGetCommand(commands []string) string {
 
 func processGetCommandRbd(command string) string {
 	if val, ok := ttl[command]; ok {
-		if val-(time.Now().UnixMilli()) > 0 {
+		if val-(time.Now().UnixNano()/1e6) > 0 {
 			return "$" + strconv.Itoa(len(rdbKeys[command])) + "\r\n" + rdbKeys[command] + "\r\n"
 		} else {
 			return "$-1\r\n"
@@ -174,7 +182,7 @@ func processRDB() [][]string {
 		key = str.Key
 		value = string(str.Value)
 		if str.GetExpiration() != nil {
-			ttl[key] = str.GetExpiration().UnixMilli()
+			ttl[key] = (time.Now().UnixNano() / 1e6)
 		}
 		current[0] = key
 		current[1] = value
