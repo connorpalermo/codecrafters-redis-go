@@ -130,9 +130,7 @@ func processGetCommand(commands []string) string {
 }
 
 func retrieveKeyFromFile() string {
-	processRDB()
-	response := ""
-	return response
+	return processRDB()
 }
 
 func populateProperties() {
@@ -146,8 +144,9 @@ func populateProperties() {
 	}
 }
 
-func processRDB() {
+func processRDB() string {
 	fileName := properties["dir"] + "/" + properties["dbfilename"]
+	key := ""
 	rdbFile, err := os.Open(fileName)
 	if err != nil {
 		panic("open dump.rdb failed")
@@ -160,24 +159,26 @@ func processRDB() {
 		switch o.GetType() {
 		case parser.StringType:
 			str := o.(*parser.StringObject)
-			println(str.Key, str.Value)
+			key = str.Key
 		case parser.ListType:
 			list := o.(*parser.ListObject)
-			println(list.Key, list.Values)
+			key = list.Key
 		case parser.HashType:
 			hash := o.(*parser.HashObject)
-			println(hash.Key, hash.Hash)
+			key = hash.Key
 		case parser.ZSetType:
 			zset := o.(*parser.ZSetObject)
-			println(zset.Key, zset.Entries)
+			key = zset.Key
 		case parser.StreamType:
 			stream := o.(*parser.StreamObject)
-			println(stream.Entries, stream.Groups)
+			key = stream.Key
 		}
-		// return true to continue, return false to stop the iteration
-		return true
+		// return false because we are only processing one key for now
+		return false
 	})
 	if err != nil {
 		panic(err)
 	}
+
+	return "*1\r\n$" + strconv.Itoa(len(key)) + "\r\n" + key + "\r\n"
 }
