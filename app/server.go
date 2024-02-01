@@ -139,7 +139,7 @@ func processGetCommand(commands []string) string {
 
 func processGetCommandRbd(command string) string {
 	if val, ok := ttl[command]; ok {
-		if val-(time.Now().UnixNano()/1e6) > 0 {
+		if val-(time.Now().UnixMilli()) > 0 {
 			return "$" + strconv.Itoa(len(rdbKeys[command])) + "\r\n" + rdbKeys[command] + "\r\n"
 		} else {
 			return "$-1\r\n"
@@ -182,7 +182,7 @@ func processRDB() [][]string {
 		key = str.Key
 		value = string(str.Value)
 		if str.GetExpiration() != nil {
-			ttl[key] = (time.Now().UnixNano() / 1e6)
+			ttl[key] = str.GetExpiration().UnixMilli()
 		}
 		current[0] = key
 		current[1] = value
