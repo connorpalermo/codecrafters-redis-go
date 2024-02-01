@@ -80,7 +80,6 @@ func processCommand(message string, conn net.Conn) {
 		response = "*" + strconv.Itoa(len(array)) + "r\n"
 		for i := 0; i < len(array); i++ {
 			fmt.Println(array[i][0])
-			response += "$" + "\r\n" + array[i][0]
 		}
 	case strings.EqualFold(command, "GET"):
 		array := retrieveValueFromKey(commands[4])
