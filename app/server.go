@@ -82,9 +82,10 @@ func processCommand(message string, conn net.Conn) {
 			response += "$" + strconv.Itoa(len(array[i][0])) + "\r\n" + array[i][0] + "\r\n"
 		}
 	case strings.EqualFold(command, "GET"):
-		array := retrieveValueFromKey(commands[4])
-		response = "$" + strconv.Itoa(len(array[0][1])) + "\r\n" + array[0][1] + "\r\n"
-
+		for i := 4; i < len(commands); i += 2 {
+			array := retrieveValueFromKey(commands[i])
+			response = "$" + strconv.Itoa(len(array[0][1])) + "\r\n" + array[0][1] + "\r\n"
+		}
 	default:
 		fmt.Println("Command not yet implemented, ignoring for now.")
 	}
