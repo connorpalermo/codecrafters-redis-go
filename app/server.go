@@ -73,7 +73,7 @@ func processCommand(message string, conn net.Conn) {
 		}
 		response = "+OK\r\n"
 	case strings.EqualFold(command, "GET") && properties["dbfilename"] == "":
-		response = processGetCommand(retrieveDBValue(commands[4]))
+		response = processGetCommand(commands)
 	case strings.EqualFold(command, "CONFIG"):
 		response = processConfigCommand(commands)
 	case strings.EqualFold(command, "KEYS"):
@@ -84,7 +84,7 @@ func processCommand(message string, conn net.Conn) {
 		}
 	case strings.EqualFold(command, "GET"):
 		retrieveKeysFromFile()
-		response = "$" + strconv.Itoa(len(rdbKeys[commands[4]])) + "\r\n" + rdbKeys[commands[4]] + "\r\n"
+		response = processGetCommandRbd(commands[4])
 	default:
 		fmt.Println("Command not yet implemented, ignoring for now.")
 	}
@@ -123,18 +123,27 @@ func processConfigCommand(commands []string) string {
 	return processed
 }
 
-func processGetCommand(command string) string {
+func processGetCommand(commands []string) string {
 	response := ""
-	if val, ok := ttl[command]; ok {
+	if val, ok := ttl[commands[4]]; ok {
 		if val-(time.Now().UnixNano()/1e6) > 0 {
-			response = "+" + command + "\r\n"
+			response = "+" + retrieveDBValue(commands[4]) + "\r\n"
 		} else {
 			response = "$-1\r\n"
 		}
 	} else {
-		response = "+" + command + "\r\n"
+		response = "+" + retrieveDBValue(commands[4]) + "\r\n"
 	}
 	return response
+}
+
+func processGetCommandRbd(command string) string {
+	if val, ok := ttl[command]; ok {
+		if val-(time.Now().UnixNano()/1e6) > 0 {
+			return "$" + strconv.Itoa(len(rdbKeys[command])) + "\r\n" + rdbKeys[command] + "\r\n"
+		}
+	}
+	return "$-1\r\n"
 }
 
 func retrieveKeysFromFile() [][]string {
