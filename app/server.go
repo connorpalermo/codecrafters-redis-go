@@ -71,7 +71,7 @@ func processCommand(message string, conn net.Conn) {
 			ttl[commands[4]] = makeTimestamp(commands[10])
 		}
 		response = "+OK\r\n"
-	case strings.EqualFold(command, "GET"):
+	case strings.EqualFold(command, "GET") && properties["dbfilename"] == "":
 		response = processGetCommand(commands)
 	case strings.EqualFold(command, "CONFIG"):
 		response = processConfigCommand(commands)
@@ -79,7 +79,6 @@ func processCommand(message string, conn net.Conn) {
 		key := retrieveKeysFromFile()
 		response = "*1\r\n$" + strconv.Itoa(len(key)) + "\r\n" + key + "\r\n"
 	case strings.EqualFold(command, "GET"):
-		fmt.Println("Debugging statement, key is :", command[4])
 		_, val := retrieveValueFromKey(commands[4])
 		response = "$" + strconv.Itoa(len(val)) + "\r\n" + val + "\r\n"
 
