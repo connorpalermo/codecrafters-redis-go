@@ -76,7 +76,12 @@ func processCommand(message string, conn net.Conn) {
 	case strings.EqualFold(command, "CONFIG"):
 		response = processConfigCommand(commands)
 	case strings.EqualFold(command, "KEYS"):
-		response = retrieveKeyFromFile()
+		key := retrieveKeysFromFile()
+		response = "*1\r\n$" + strconv.Itoa(len(key)) + "\r\n" + key + "\r\n"
+	case strings.EqualFold(command, "GET"):
+		_, val := retrieveValueFromKey(commands[4])
+		response = "$" + strconv.Itoa(len(val)) + "\r\n" + val + "\r\n"
+
 	default:
 		fmt.Println("Command not yet implemented, ignoring for now.")
 	}
@@ -129,8 +134,14 @@ func processGetCommand(commands []string) string {
 	return response
 }
 
-func retrieveKeyFromFile() string {
-	return processRDB()
+func retrieveKeysFromFile() string {
+	key, _ := processRDB("")
+	return key
+}
+
+func retrieveValueFromKey(keyToFind string) (string, string) {
+	key, val := processRDB(keyToFind)
+	return key, val
 }
 
 func populateProperties() {
@@ -144,9 +155,9 @@ func populateProperties() {
 	}
 }
 
-func processRDB() string {
+func processRDB(keyToFind string) (string, string) {
 	fileName := properties["dir"] + "/" + properties["dbfilename"]
-	key := ""
+	key, value := "", ""
 	rdbFile, err := os.Open(fileName)
 	if err != nil {
 		panic("open dump.rdb failed")
@@ -160,25 +171,40 @@ func processRDB() string {
 		case parser.StringType:
 			str := o.(*parser.StringObject)
 			key = str.Key
+			value = string(str.Value)
 		case parser.ListType:
 			list := o.(*parser.ListObject)
 			key = list.Key
+			value = string(list.Values[1])
 		case parser.HashType:
 			hash := o.(*parser.HashObject)
 			key = hash.Key
+			value = hash.GetEncoding()
 		case parser.ZSetType:
 			zset := o.(*parser.ZSetObject)
 			key = zset.Key
+			value = zset.GetEncoding()
 		case parser.StreamType:
 			stream := o.(*parser.StreamObject)
 			key = stream.Key
+			value = stream.GetEncoding()
 		}
-		// return false because we are only processing one key for now
-		return false
+
+		if keyToFind != "" {
+			if !strings.EqualFold(keyToFind, key) {
+				return false
+			} else {
+				return true
+			}
+		}
+		if key != "" {
+			return false
+		}
+		return true
 	})
 	if err != nil {
 		panic(err)
 	}
 
-	return "*1\r\n$" + strconv.Itoa(len(key)) + "\r\n" + key + "\r\n"
+	return key, value
 }
