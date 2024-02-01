@@ -9,6 +9,8 @@ import (
 
 	"net"
 	"os"
+
+	"github.com/hdt3213/rdb/parser"
 )
 
 const bufferSize = 1024
@@ -128,15 +130,8 @@ func processGetCommand(commands []string) string {
 }
 
 func retrieveKeyFromFile() string {
-	fileName := properties["dir"] + "/" + properties["dbfilename"]
-	b, err := os.ReadFile(fileName)
-	if err != nil {
-		fmt.Print("File does not exist!")
-		return "$-1\r\n"
-	}
-
-	key := string(b)
-	response := "*1\r\n$" + strconv.Itoa(len(key)) + "\r\n" + key + "\r\n"
+	processRDB()
+	response := ""
 	return response
 }
 
@@ -148,5 +143,41 @@ func populateProperties() {
 			key := strings.ReplaceAll(args[i], "-", "")
 			properties[key] = args[i+1]
 		}
+	}
+}
+
+func processRDB() {
+	fileName := properties["dir"] + "/" + properties["dbfilename"]
+	rdbFile, err := os.Open(fileName)
+	if err != nil {
+		panic("open dump.rdb failed")
+	}
+	defer func() {
+		_ = rdbFile.Close()
+	}()
+	decoder := parser.NewDecoder(rdbFile)
+	err = decoder.Parse(func(o parser.RedisObject) bool {
+		switch o.GetType() {
+		case parser.StringType:
+			str := o.(*parser.StringObject)
+			println(str.Key, str.Value)
+		case parser.ListType:
+			list := o.(*parser.ListObject)
+			println(list.Key, list.Values)
+		case parser.HashType:
+			hash := o.(*parser.HashObject)
+			println(hash.Key, hash.Hash)
+		case parser.ZSetType:
+			zset := o.(*parser.ZSetObject)
+			println(zset.Key, zset.Entries)
+		case parser.StreamType:
+			stream := o.(*parser.StreamObject)
+			println(stream.Entries, stream.Groups)
+		}
+		// return true to continue, return false to stop the iteration
+		return true
+	})
+	if err != nil {
+		panic(err)
 	}
 }
