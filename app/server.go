@@ -74,6 +74,8 @@ func processCommand(message string, conn net.Conn) {
 		response = "+OK\r\n"
 	case strings.EqualFold(command, "GET") && properties["dbfilename"] == "":
 		response = processGetCommand(commands)
+	case strings.EqualFold(command, "CONFIG"):
+		response = processConfigCommand(commands)
 	case strings.EqualFold(command, "KEYS"):
 		array := retrieveKeysFromFile()
 		response = "*" + strconv.Itoa(len(array)) + "\r\n"
@@ -108,6 +110,17 @@ func retrieveDBValue(key string) string {
 	}
 
 	return ""
+}
+
+func processConfigCommand(commands []string) string {
+	processed := ""
+	if strings.EqualFold(commands[4], "GET") {
+		keyLen := len(commands[6])
+		valLen := len(properties[commands[6]])
+		processed = "*2\r\n$" + strconv.Itoa(keyLen) + "\r\n" + commands[6] +
+			"\r\n$" + strconv.Itoa(valLen) + "\r\n" + properties[commands[6]] + "\r\n"
+	}
+	return processed
 }
 
 func processGetCommand(commands []string) string {
